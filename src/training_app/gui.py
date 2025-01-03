@@ -1,17 +1,16 @@
-# src/main.py
+# src/training_app/gui.py
 
-import sys
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton,
+    QMainWindow, QWidget, QVBoxLayout, QPushButton,
     QFileDialog, QLabel, QTableWidget, QTableWidgetItem, QComboBox,
-    QLineEdit, QHBoxLayout, QTextEdit, QProgressBar, QMessageBox, QSpinBox, QDoubleSpinBox
+    QHBoxLayout, QTextEdit, QProgressBar, QMessageBox, QSpinBox, QDoubleSpinBox
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import pandas as pd
-import os
-import joblib
+import logging
 
-from model_trainer import ModelTrainer
+from training_app.model_trainer import ModelTrainer
+from training_app.utils import PlotCanvas  # Import PlotCanvas for visualization
 
 class TrainingThread(QThread):
     progress = pyqtSignal(str)
@@ -23,20 +22,22 @@ class TrainingThread(QThread):
         self.target_column = target_column
         self.model_type = model_type
         self.hyperparameters = hyperparameters
+        self.trainer = None  # To store the trainer instance for saving the model
 
     def run(self):
         try:
             self.progress.emit("Loading data...")
-            trainer = ModelTrainer(
+            self.trainer = ModelTrainer(
                 dataset_path=self.dataset_path,
                 target_column=self.target_column,
                 model_type=self.model_type,
                 hyperparameters=self.hyperparameters
             )
-            metrics = trainer.run()
+            metrics = self.trainer.run()
             self.progress.emit("Training completed.")
             self.finished.emit(metrics)
         except Exception as e:
+            logging.exception("Error during training thread execution.")
             self.progress.emit(f"Error: {str(e)}")
             self.finished.emit({})
 
@@ -44,7 +45,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("PyQt Model Trainer")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1000, 800)  # Increased width for better layout
 
         self.dataset_path = None
         self.df = None
@@ -88,12 +89,12 @@ class MainWindow(QMainWindow):
         layout.addLayout(self.hyperparam_layout)
         self.update_hyperparameter_fields(self.model_combo.currentText())
 
-        # Target Column Input
+        # Target Column Selection
         target_layout = QHBoxLayout()
         target_label = QLabel("Target Column:")
-        self.target_input = QLineEdit()
+        self.target_combo = QComboBox()  # Changed from QLineEdit to QComboBox
         target_layout.addWidget(target_label)
-        target_layout.addWidget(self.target_input)
+        target_layout.addWidget(self.target_combo)
         layout.addLayout(target_layout)
 
         # Start Training Button
@@ -119,6 +120,10 @@ class MainWindow(QMainWindow):
         self.metrics_text.setReadOnly(True)
         layout.addWidget(self.metrics_text)
 
+        # Plot Canvas for Confusion Matrix
+        self.plot_canvas = PlotCanvas(self, width=5, height=4)
+        layout.addWidget(self.plot_canvas)
+
         central_widget.setLayout(layout)
 
     def load_dataset(self):
@@ -138,10 +143,13 @@ class MainWindow(QMainWindow):
                     self.df = pd.read_excel(file_path)
                 self.dataset_path = file_path
                 self.display_data()
+                self.populate_target_columns()
                 self.train_btn.setEnabled(True)
                 QMessageBox.information(self, "Success", "Dataset loaded successfully.")
+                logging.info(f"Dataset loaded from {file_path}.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load dataset: {str(e)}")
+                logging.exception("Failed to load dataset.")
 
     def display_data(self):
         if self.df is not None:
@@ -153,16 +161,26 @@ class MainWindow(QMainWindow):
                 for j, col in enumerate(self.df.columns):
                     self.table.setItem(i, j, QTableWidgetItem(str(self.df.iloc[i, j])))
             self.table.resizeColumnsToContents()
+            logging.info("Data displayed in the table.")
+
+    def populate_target_columns(self):
+        """
+        Populates the target column ComboBox with column names from the dataset.
+        """
+        self.target_combo.clear()
+        if self.df is not None:
+            self.target_combo.addItems(self.df.columns)
+            logging.info("Target column ComboBox populated.")
 
     def update_hyperparameter_fields(self, model_name):
         # Clear existing hyperparameter fields
-        for i in reversed(range(self.hyperparam_layout.count())):
-            widget = self.hyperparam_layout.itemAt(i).widget()
-            if widget is not None:
-                widget.setParent(None)
+        while self.hyperparam_layout.count():
+            child = self.hyperparam_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
 
         # Add hyperparameter fields based on model
-        if model_name == "Random Forest Regressor" or model_name == "Random Forest Classifier":
+        if model_name in ["Random Forest Regressor", "Random Forest Classifier"]:
             # Example hyperparameters
             n_estimators_label = QLabel("n_estimators:")
             self.n_estimators_input = QSpinBox()
@@ -178,7 +196,7 @@ class MainWindow(QMainWindow):
             self.hyperparam_layout.addWidget(self.n_estimators_input)
             self.hyperparam_layout.addWidget(max_depth_label)
             self.hyperparam_layout.addWidget(self.max_depth_input)
-        elif model_name == "SVM Regressor" or model_name == "SVM Classifier":
+        elif model_name in ["SVM Regressor", "SVM Classifier"]:
             c_label = QLabel("C:")
             self.c_input = QDoubleSpinBox()
             self.c_input.setRange(0.01, 1000.0)
@@ -197,15 +215,20 @@ class MainWindow(QMainWindow):
             # Linear Regression has no hyperparameters
             info_label = QLabel("No hyperparameters to configure for Linear Regression.")
             self.hyperparam_layout.addWidget(info_label)
+            logging.info("Linear Regression selected. No hyperparameters to configure.")
 
     def start_training(self):
         if not self.dataset_path:
             QMessageBox.warning(self, "Warning", "Please load a dataset first.")
             return
 
-        target_column = self.target_input.text().strip()
+        target_column = self.target_combo.currentText().strip()
         if not target_column:
-            QMessageBox.warning(self, "Warning", "Please specify the target column.")
+            QMessageBox.warning(self, "Warning", "Please select the target column.")
+            return
+
+        if target_column not in self.df.columns:
+            QMessageBox.warning(self, "Warning", f"'{target_column}' is not a valid column in the dataset.")
             return
 
         model_name = self.model_combo.currentText()
@@ -225,6 +248,10 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.log_text.clear()
         self.metrics_text.clear()
+        self.plot_canvas.axes.clear()
+        self.plot_canvas.draw()
+
+        logging.info("Starting training process.")
 
         # Start training in a separate thread
         self.thread = TrainingThread(
@@ -251,17 +278,33 @@ class MainWindow(QMainWindow):
         self.log_text.append(message)
         if "completed" in message.lower():
             self.progress_bar.setValue(100)
+            logging.info("Training completed.")
         elif "error" in message.lower():
             self.progress_bar.setValue(0)
             self.train_btn.setEnabled(True)
+            logging.error(f"Training error: {message}")
         else:
+            # Assuming progress is at 50% during training
             self.progress_bar.setValue(50)
+            logging.info(f"Training progress: {message}")
 
     def training_finished(self, metrics):
         if metrics:
             self.metrics_text.setPlainText("\n".join([f"{k}: {v}" for k, v in metrics.items()]))
             QMessageBox.information(self, "Success", "Model training and evaluation completed.")
-            # Optionally, prompt to save the model
+            logging.info("Model training and evaluation completed.")
+
+            # Plot confusion matrix if classification
+            if 'Confusion Matrix' in metrics and 'Classes' in metrics:
+                try:
+                    cm = metrics['Confusion Matrix']
+                    classes = metrics['Classes']
+                    self.plot_canvas.plot_confusion_matrix(cm, classes)
+                    logging.info("Confusion matrix plotted.")
+                except Exception as e:
+                    logging.exception("Failed to plot confusion matrix.")
+
+            # Prompt to save the model
             save_model = QMessageBox.question(
                 self, "Save Model", "Do you want to save the trained model?",
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No
@@ -270,6 +313,8 @@ class MainWindow(QMainWindow):
                 self.save_model()
         else:
             QMessageBox.critical(self, "Error", "Model training failed. Check logs for details.")
+            logging.error("Model training failed.")
+
         self.train_btn.setEnabled(True)
 
     def save_model(self):
@@ -283,17 +328,13 @@ class MainWindow(QMainWindow):
         )
         if file_path:
             try:
-                # Assuming the last trained model is stored in trainer.model
-                trainer = self.thread.trainer
-                if not trainer:
+                # Check if thread and trainer are available
+                if not hasattr(self, 'thread') or not self.thread.trainer:
                     raise ValueError("No trained model available to save.")
+                trainer = self.thread.trainer
                 trainer.save_model(file_path)
                 QMessageBox.information(self, "Success", f"Model saved to {file_path}")
+                logging.info(f"Model saved to {file_path}.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save model: {str(e)}")
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
+                logging.exception("Failed to save model.")
