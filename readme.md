@@ -9,19 +9,19 @@ A PyQt-based application for training machine learning models, including LSTM ne
 The following outlines the directory structure of the project and its purpose:
 
 LSTMModelTrainer/
-├── data/                 # Primary folder for datasets used in model training.
-├── data2/                # Secondary folder for additional datasets.
-├── models/               # Folder to save trained models.
-├── plots/                # Folder for storing visualization plots.
-├── src/                  # Source code for the project.
-│   ├── main.py           # Main PyQt GUI application.
-│   ├── model_trainer.py  # Core model training logic and utilities.
-│   ├── utils.py          # Auxiliary utilities for data processing and configuration.
-├── .gitignore            # Excludes unnecessary files from version control.
-├── config.ini            # Configuration file for setting default paths and parameters.
-├── LICENSE               # License information for the project.
-├── LSTM_Model_Trainer/   # Repository root folder (includes documentation and other assets).
-└── README.md             # Project overview and documentation.
+├── data/                # Primary folder for datasets used in model training.
+├── data2/               # Secondary folder for additional datasets.
+├── models/              # Folder to save trained models.
+├── plots/               # Folder for storing visualization plots.
+├── src/                 # Source code for the project.
+│   ├── main.py          # Main PyQt GUI application.
+│   ├── model_trainer.py # Core model training logic and utilities.
+│   ├── utils.py         # Auxiliary utilities for data processing and configuration.
+├── .gitignore           # Excludes unnecessary files from version control.
+├── config.ini           # Configuration file for setting default paths and parameters.
+├── LICENSE              # License information for the project.
+├── LSTM_Model_Trainer/  # Repository root folder (includes documentation and other assets).
+└── README.md            # Project overview and documentation.
 
 ---
 
