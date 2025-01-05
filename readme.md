@@ -2,12 +2,16 @@
 
 A PyQt-based application for training machine learning models, including LSTM networks, with a user-friendly interface for data preprocessing, model configuration, and performance evaluation.
 
----
+
 
 ## Project Directory Structure
 
 The following outlines the directory structure of the project and its purpose:
+# Project Directory Structure
 
+The following outlines the directory structure of the project and its purpose:
+
+```plaintext
 LSTMModelTrainer/
 ├── data/                # Primary folder for datasets used in model training.
 ├── data2/               # Secondary folder for additional datasets.
@@ -23,7 +27,6 @@ LSTMModelTrainer/
 ├── LSTM_Model_Trainer/  # Repository root folder (includes documentation and other assets).
 └── README.md            # Project overview and documentation.
 
----
 
 ## Current Features
 
