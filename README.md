@@ -106,7 +106,7 @@ This project is licensed under the **MIT License**. See the `LICENSE` file for m
 ## Contact
 
 - **Developer**: Dadudekc  
-- **Email**: [contact@example.com](mailto:contact@example.com)  
+- **Email**: Freerideinvestor@gmail.com
 - **Discord**: Dadudekc#1234  
 - **Repository**: [LSTM Model Trainer](https://github.com/Dadudekc/LSTM_model_trainer)
 
