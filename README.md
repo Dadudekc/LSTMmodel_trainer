@@ -1,57 +1,38 @@
 # LSTM Model Trainer
 
-A small PyQt-based application for experimenting with machine-learning models. The goal is to showcase how automation and ML tooling can be orchestrated in Python.
+![Python version](https://img.shields.io/badge/python-3.8%2B-blue.svg) ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-![Python version](https://img.shields.io/badge/python-3.8%2B-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+## Project Purpose
 
-## Overview
-
-The GUI lets you load a CSV or Excel file, select a model and launch training in a background thread.  `ModelTrainer` handles preprocessing, training and evaluation before returning metrics that can be displayed and saved.  A standalone script (`LSTM_Model_Trainer`) demonstrates training an LSTM on time-series data.
-
-```
-GUI (PyQt)
-   │
-   ├── Load dataset
-   ├── Select model & hyperparameters
-   ├── Launch TrainingThread
-   │       └── ModelTrainer
-   │              ├── preprocess data
-   │              ├── train model
-   │              └── evaluate & cross‑validate
-   └── Display metrics / save model
-```
-
-Supported models include linear regression, random forests, SVMs and a simple LSTM example. The tests under `tests/` confirm imports and core training logic.
-
-## Project Structure
-
-```plaintext
-LSTMmodel_trainer/
-├── src/
-│   ├── main.py            # PyQt interface
-│   ├── model_trainer.py   # Training utilities
-│   └── utils.py           # Misc helpers
-├── LSTM_Model_Trainer     # Standalone LSTM training script
-├── tests/
-│   ├── test_imports.py
-│   └── test_model_trainer_core.py
-├── config.ini             # Example paths for datasets
-├── LICENSE
-├── README.md
-└── interview_summary.txt
-```
+This repository showcases a lightweight machine‑learning playground built with PyQt. It demonstrates how a GUI can orchestrate dataset loading, preprocessing and model training in a single desktop app. A companion script illustrates a minimal LSTM workflow for time‑series data.
 
 ## Key Features
 
-- **Interactive GUI** for basic model training
-- **Data Handling** for CSV and Excel files
-- **Model Options**: linear regression, random forest, SVM and LSTM
-- **Asynchronous Training** with log updates and metric display
+- **Interactive GUI** – load CSV/Excel data and kick off training from the desktop.
+- **ModelTrainer class** – wraps preprocessing, model selection and evaluation.
+- **Supported models** – linear regression, random forest, SVM and a small LSTM example.
+- **Background training** – UI stays responsive using a separate thread.
+- **Metrics & saving** – view evaluation results and optionally persist the trained model.
 
-## Installation
+## Architecture Overview
 
-Install the minimal dependencies:
+```
+LSTMmodel_trainer/
+├── src/
+│   ├── main.py            # PyQt interface and TrainingThread
+│   ├── model_trainer.py   # Core training utilities
+│   └── utils.py           # Plotting helper for confusion matrices
+├── LSTM_Model_Trainer     # Stand‑alone script for LSTM experiments
+├── tests/                 # Pytest suites using lightweight stubs
+│   ├── test_imports.py
+│   └── test_model_trainer_core.py
+```
+
+`model_trainer.py` can be used independently of the GUI. It handles loading a dataset, preprocessing (dummy‑encoding categorical features and dropping missing values), selecting a scikit‑learn model and computing metrics including simple cross‑validation. The GUI in `main.py` wires this trainer into a desktop application.
+
+## Setup
+
+Install the required packages (PyQt5, pandas, scikit‑learn, tensorflow, joblib). Example:
 
 ```bash
 pip install PyQt5 pandas scikit-learn tensorflow joblib
@@ -59,18 +40,31 @@ pip install PyQt5 pandas scikit-learn tensorflow joblib
 
 ## Usage
 
-Start the GUI:
+Launch the GUI:
 
 ```bash
 python src/main.py
 ```
 
-Run the tests with `pytest`.
+Run the standalone LSTM script:
+
+```bash
+python LSTM_Model_Trainer
+```
+
+Both require the dependencies above. A sample `config.ini` shows expected dataset paths.
+
+### Running Tests
+
+Execute the test suite with [pytest](https://docs.pytest.org/):
+
+```bash
+pytest -q
+```
+
+The tests use stub modules so they run without heavy ML dependencies.
 
 ## License
 
-Released under the MIT License.
+This project is released under the MIT License. See `LICENSE` for details.
 
-## Contact
-
-**Developer:** Dadudekc – [LSTM Model Trainer](https://github.com/Dadudekc/LSTM_model_trainer)
