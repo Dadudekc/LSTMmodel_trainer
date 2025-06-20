@@ -1,113 +1,76 @@
 # LSTM Model Trainer
 
-A PyQt-based application for training machine learning models, including LSTM networks, with a user-friendly interface for data preprocessing, model configuration, and performance evaluation.
+A small PyQt-based application for experimenting with machine-learning models. The goal is to showcase how automation and ML tooling can be orchestrated in Python.
 
+![Python version](https://img.shields.io/badge/python-3.8%2B-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
+## Overview
 
-## Project Directory Structure
+The GUI lets you load a CSV or Excel file, select a model and launch training in a background thread.  `ModelTrainer` handles preprocessing, training and evaluation before returning metrics that can be displayed and saved.  A standalone script (`LSTM_Model_Trainer`) demonstrates training an LSTM on time-series data.
 
-The following outlines the directory structure of the project and its purpose:
-# Project Directory Structure
+```
+GUI (PyQt)
+   │
+   ├── Load dataset
+   ├── Select model & hyperparameters
+   ├── Launch TrainingThread
+   │       └── ModelTrainer
+   │              ├── preprocess data
+   │              ├── train model
+   │              └── evaluate & cross‑validate
+   └── Display metrics / save model
+```
 
-The following outlines the directory structure of the project and its purpose:
+Supported models include linear regression, random forests, SVMs and a simple LSTM example. The tests under `tests/` confirm imports and core training logic.
+
+## Project Structure
 
 ```plaintext
-LSTMModelTrainer/
-├── data/                # Primary folder for datasets used in model training.
-├── data2/               # Secondary folder for additional datasets.
-├── models/              # Folder to save trained models.
-├── plots/               # Folder for storing visualization plots.
-├── src/                 # Source code for the project.
-│   ├── main.py          # Main PyQt GUI application.
-│   ├── model_trainer.py # Core model training logic and utilities.
-│   ├── utils.py         # Auxiliary utilities for data processing and configuration.
-├── .gitignore           # Excludes unnecessary files from version control.
-├── config.ini           # Configuration file for setting default paths and parameters.
-├── LICENSE              # License information for the project.
-├── LSTM_Model_Trainer/  # Repository root folder (includes documentation and other assets).
-└── README.md            # Project overview and documentation.
+LSTMmodel_trainer/
+├── src/
+│   ├── main.py            # PyQt interface
+│   ├── model_trainer.py   # Training utilities
+│   └── utils.py           # Misc helpers
+├── LSTM_Model_Trainer     # Standalone LSTM training script
+├── tests/
+│   ├── test_imports.py
+│   └── test_model_trainer_core.py
+├── config.ini             # Example paths for datasets
+├── LICENSE
+├── README.md
+└── interview_summary.txt
+```
 
+## Key Features
 
-## Current Features
+- **Interactive GUI** for basic model training
+- **Data Handling** for CSV and Excel files
+- **Model Options**: linear regression, random forest, SVM and LSTM
+- **Asynchronous Training** with log updates and metric display
 
-- **Interactive GUI**: A user-friendly interface for loading datasets, configuring models, and monitoring progress.
-- **Data Handling**:
-  - Support for CSV and Excel files.
-  - Preprocessing steps like handling missing values, scaling, and encoding categorical variables.
-- **Model Support**:
-  - Linear Regression, Random Forest (Classifier & Regressor), SVM (Classifier & Regressor), and LSTM.
-- **Training and Evaluation**:
-  - Real-time logs and progress updates.
-  - Cross-validation and metric evaluation.
-  - Save and load models for reuse.
+## Installation
 
----
+Install the minimal dependencies:
 
-## Future Plans
+```bash
+pip install PyQt5 pandas scikit-learn tensorflow joblib
+```
 
-### Short-Term Goals
-- Expand preprocessing options to support additional feature engineering techniques.
-- Enhance LSTM functionality with more hyperparameter tuning options.
-- Implement real-time visual feedback for metrics like loss and accuracy during training.
+## Usage
 
-### Medium-Term Goals
-- Add support for additional machine learning models:
-  - Gradient Boosting (e.g., XGBoost, LightGBM).
-  - Neural Networks for complex and deeper learning tasks.
-- Enable support for diverse file formats, such as JSON and SQL-based datasets.
-- Refine the GUI for an improved and intuitive user experience.
+Start the GUI:
 
-### Long-Term Goals
-- **Cloud Integration**:
-  - Load datasets directly from cloud storage services.
-  - Deploy trained models to cloud-based platforms for real-time inference.
-- **Distributed Training**:
-  - Introduce capabilities for training across multiple GPUs or distributed systems.
-- Build an integrated tutorial system within the application to guide and onboard new users effectively.
+```bash
+python src/main.py
+```
 
----
-
-## Installation and Usage
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Dadudekc/LSTM_model_trainer.git
-   ```
-
-2. **Navigate to the project directory**:
-   ```bash
-   cd LSTMModelTrainer
-   ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Run the application**:
-   ```bash
-   python src/main.py
-   ```
-
----
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests to suggest features or improvements.
-
----
+Run the tests with `pytest`.
 
 ## License
 
-This project is licensed under the **MIT License**. See the `LICENSE` file for more details.
-
----
+Released under the MIT License.
 
 ## Contact
 
-- **Developer**: Dadudekc  
-- **Email**: Freerideinvestor@gmail.com
-- **Discord**: Dadudekc#1234  
-- **Repository**: [LSTM Model Trainer](https://github.com/Dadudekc/LSTM_model_trainer)
-
----
+**Developer:** Dadudekc – [LSTM Model Trainer](https://github.com/Dadudekc/LSTM_model_trainer)

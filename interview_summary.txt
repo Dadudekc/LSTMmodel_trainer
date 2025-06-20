@@ -1,0 +1,1 @@
+In this project I built a lightweight desktop tool that lets you train and evaluate standard machine-learning models through a PyQt interface. It demonstrates structuring a small training pipeline (load data → preprocess → train → evaluate) and integrating it with a GUI. The tests show that the ModelTrainer class is modular and that the code is maintainable.
