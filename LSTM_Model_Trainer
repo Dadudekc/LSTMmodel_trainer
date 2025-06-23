@@ -1,131 +1,53 @@
-import os
+import argparse
 import json
-import logging
-import configparser
-import pandas as pd
-import numpy as np
-import pickle
-import joblib
-from datetime import datetime
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, accuracy_score, mean_absolute_error, r2_score
-from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Dense, LSTM
-from keras_tuner import HyperModel, RandomSearch
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, PowerTransformer, MinMaxScaler, RobustScaler, QuantileTransformer, Normalizer, MaxAbsScaler
+from model_trainer import ModelTrainer
 
-# Setup Logging
-logging.basicConfig(level=logging.INFO)
 
-# Configuration Loading
-def load_configuration(config_file='config.ini'):
-    config = configparser.ConfigParser()
-    if not os.path.exists(config_file):
-        raise FileNotFoundError(f"Configuration file does not exist: {config_file}")
-    config.read(config_file)
-    return config
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train a model using ModelTrainer")
+    parser.add_argument("--dataset", required=True, help="Path to CSV dataset")
+    parser.add_argument("--target", required=True, help="Target column name")
+    parser.add_argument(
+        "--model",
+        choices=[
+            "linear_regression",
+            "random_forest_regressor",
+            "random_forest_classifier",
+            "svm_regressor",
+            "svm_classifier",
+            "lstm",
+            "ppo",
+        ],
+        default="linear_regression",
+        help="Model type to train",
+    )
+    parser.add_argument("--env", default="CartPole-v1", help="Gym environment for PPO")
+    parser.add_argument("--timesteps", type=int, default=10000, help="Timesteps for PPO training")
+    parser.add_argument("--lstm-units", type=int, default=50, help="Number of LSTM units")
+    parser.add_argument(
+        "--sequence-length",
+        type=int,
+        default=10,
+        help="Input sequence length for LSTM",
+    )
+    return parser.parse_args()
 
-# Data Loading
-def load_data_from_folder(folder_path):
-    data_files = {}
-    csv_files = [f for f in os.listdir(folder_path) if f.endswith('.csv')]
-    for csv_file in csv_files:
-        csv_file_path = os.path.join(folder_path, csv_file)
-        data_files[csv_file] = pd.read_csv(csv_file_path)
-    return data_files
 
-# Data Preprocessing
-def preprocess_data(data, fill_method='ffill'):
-    if 'date' not in data.columns:
-        logging.error("'date' column missing in data")
-        return None
-    data['date'] = pd.to_datetime(data['date'], errors='coerce')
-    data.dropna(subset=['date'], inplace=True)
-    data.fillna(method=fill_method, inplace=True)
-    data['date'] = (data['date'] - data['date'].min()).dt.total_seconds()
-    return data
-
-# Data Splitting and Scaling
-def split_and_scale_data(X, y, test_size=0.2, scaler_type='standard'):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
-    scalers = {
-        'standard': StandardScaler(),
-        'power': PowerTransformer(),
-        'minmax': MinMaxScaler(),
-        'robust': RobustScaler(),
-        'quantile_gaussian': QuantileTransformer(output_distribution='normal'),
-        'quantile_uniform': QuantileTransformer(output_distribution='uniform'),
-        'normalizer': Normalizer(),
-        'maxabs': MaxAbsScaler()
-    }
-    scaler = scalers.get(scaler_type, StandardScaler())
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-    return X_train_scaled, X_test_scaled, y_train, y_test
-
-# Preparing data for LSTM
-def prepare_data_for_lstm(data, num_time_steps):
-    sequences = []
-    targets = []
-    for i in range(len(data) - num_time_steps):
-        sequence = data[i:i+num_time_steps]
-        target = data[i+num_time_steps]
-        sequences.append(sequence)
-        targets.append(target)
-    X = np.array(sequences).reshape(-1, num_time_steps, 1)
-    y = np.array(targets)
-    return X, y
-
-# Training Model
-def train_model(X_train, y_train, model_type='LSTM', lstm_units=50):
-    if model_type == 'linear_regression':
-        model = LinearRegression().fit(X_train, y_train)
-    elif model_type == 'random_forest':
-        model = RandomForestRegressor().fit(X_train, y_train)
-    elif model_type == 'lstm':
-        model = Sequential([
-            LSTM(lstm_units, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])),
-            LSTM(lstm_units),
-            Dense(1)
-        ])
-        model.compile(optimizer='adam', loss='mse')
-        model.fit(X_train, y_train, epochs=10, batch_size=32, verbose=1)
-    else:
-        raise ValueError(f"Invalid model type: {model_type}")
-    return model
-
-# Main Function
-# ...
-
-# Main Function
 def main():
-    config = load_configuration()
-    data_folder = config['Paths']['data_folder']
-    data_files_1 = load_data_from_folder(data_folder)
-    second_data_folder = config['Paths']['second_data_folder']
-    data_files_2 = load_data_from_folder(second_data_folder)
-    all_data_files = {**data_files_1, **data_files_2}
+    args = parse_args()
+    hyperparameters = {}
+    if args.model == "ppo":
+        hyperparameters["env_name"] = args.env
+        hyperparameters["timesteps"] = args.timesteps
+    elif args.model == "lstm":
+        hyperparameters["lstm_units"] = args.lstm_units
+        hyperparameters["num_time_steps"] = args.sequence_length
 
-    for csv_file, data in all_data_files.items():
-        data = preprocess_data(data)
-        if data is None:
-            continue
-        target_column = 'close' if 'close' in data.columns else None
-        if not target_column:
-            logging.error(f'Target column not found in data file: {csv_file}')
-            continue
-        X = data.drop([target_column], axis=1)
-        y = data[target_column]
-        X_train, X_test, y_train, y_test = split_and_scale_data(X, y)
-        
-        # Reset the index of y_train
-        y_train = y_train.reset_index(drop=True)
-        
-        X_train_lstm, y_train_lstm = prepare_data_for_lstm(y_train, 10)
-        model = train_model(X_train_lstm, y_train_lstm, model_type='lstm')
-        # Add model evaluation and saving logic here
+    trainer = ModelTrainer(args.dataset, args.target, args.model, hyperparameters)
+    metrics = trainer.run()
+    print(json.dumps(metrics, indent=2))
+
 
 if __name__ == "__main__":
     main()
+
