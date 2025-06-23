@@ -31,6 +31,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, LSTM
 from keras_tuner import HyperModel, RandomSearch
 
+# PPO support relies on stable-baselines3 and gym which are optional
+
 # Setup Logging
 logging.basicConfig(level=logging.INFO)
 
@@ -42,6 +44,7 @@ class ModelTrainer:
         self.hyperparameters = hyperparameters
         self.model = None
         self.metrics = {}
+        self.env = None  # Used for PPO models
 
     def load_data(self):
         data = pd.read_csv(self.dataset_path)
@@ -73,16 +76,56 @@ class ModelTrainer:
             self.model = SVC(**self.hyperparameters)
         elif self.model_type == 'svm_regressor':
             self.model = SVR(**self.hyperparameters)
+        elif self.model_type == 'lstm':
+            lstm_units = self.hyperparameters.get('lstm_units', 50)
+            input_shape = self.hyperparameters.get('input_shape')
+            if input_shape is None:
+                raise ValueError("input_shape must be provided for LSTM models")
+            self.model = Sequential([
+                LSTM(lstm_units, return_sequences=True, input_shape=input_shape),
+                LSTM(lstm_units),
+                Dense(1)
+            ])
+            self.model.compile(optimizer='adam', loss='mse')
+        elif self.model_type == 'ppo':
+            try:
+                from stable_baselines3 import PPO
+                import gym
+            except ImportError as e:
+                raise ImportError("stable-baselines3 and gym are required for PPO") from e
+            env_name = self.hyperparameters.get('env_name', 'CartPole-v1')
+            self.env = gym.make(env_name)
+            ppo_params = {k: v for k, v in self.hyperparameters.items() if k not in ['env_name', 'timesteps', 'eval_episodes']}
+            self.model = PPO('MlpPolicy', self.env, **ppo_params)
         else:
             raise ValueError(f"Unsupported model type: {self.model_type}")
 
     def train(self, X_train, y_train):
-        self.model.fit(X_train, y_train)
+        if self.model_type == 'ppo':
+            timesteps = self.hyperparameters.get('timesteps', 10000)
+            self.model.learn(total_timesteps=timesteps)
+        else:
+            self.model.fit(X_train, y_train)
 
     def evaluate(self, X_test, y_test):
+        if self.model_type == 'ppo':
+            episodes = self.hyperparameters.get('eval_episodes', 5)
+            rewards = []
+            for _ in range(episodes):
+                obs = self.env.reset()
+                done = False
+                total_reward = 0
+                while not done:
+                    action, _ = self.model.predict(obs)
+                    obs, reward, done, _ = self.env.step(action)
+                    total_reward += reward
+                rewards.append(total_reward)
+            self.metrics['Average Reward'] = np.mean(rewards)
+            return
+
         predictions = self.model.predict(X_test)
 
-        if self.model_type in ['linear_regression', 'random_forest_regressor', 'svm_regressor']:
+        if self.model_type in ['linear_regression', 'random_forest_regressor', 'svm_regressor', 'lstm']:
             self.metrics['Mean Squared Error'] = mean_squared_error(y_test, predictions)
             self.metrics['R² Score'] = r2_score(y_test, predictions)
         else:
@@ -93,6 +136,8 @@ class ModelTrainer:
             self.metrics['F1 Score'] = f1_score(y_test, predictions, average='weighted', zero_division=0)
 
     def cross_validate_model(self, X, y, cv=5):
+        if self.model_type in ['ppo', 'lstm']:
+            return
         if self.model_type in ['linear_regression', 'random_forest_regressor', 'svm_regressor']:
             scores = cross_val_score(self.model, X, y, cv=cv, scoring='r2')
             self.metrics['Cross-Validation R² Mean'] = scores.mean()
@@ -103,20 +148,49 @@ class ModelTrainer:
             self.metrics['Cross-Validation Accuracy Std'] = scores.std()
 
     def save_model(self, save_path):
-        joblib.dump(self.model, save_path)
+        if self.model_type in ['ppo', 'lstm']:
+            self.model.save(save_path)
+        else:
+            joblib.dump(self.model, save_path)
 
     def load_model(self, model_path):
-        self.model = joblib.load(model_path)
+        if self.model_type == 'ppo':
+            try:
+                from stable_baselines3 import PPO
+            except ImportError as e:
+                raise ImportError("stable-baselines3 is required for PPO") from e
+            self.model = PPO.load(model_path, env=self.env)
+        elif self.model_type == 'lstm':
+            from tensorflow.keras.models import load_model as keras_load_model
+            self.model = keras_load_model(model_path)
+        else:
+            self.model = joblib.load(model_path)
 
     def run(self):
         data = self.load_data()
-        X, y = self.preprocess_data(data)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        if self.model_type == 'lstm':
+            series = data[self.target_column].reset_index(drop=True)
+            num_steps = self.hyperparameters.get('num_time_steps', 10)
+            X, y = preprocess_lstm_data(series, num_steps)
+        else:
+            X, y = self.preprocess_data(data)
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42
+        )
+
+        if self.model_type == 'lstm':
+            self.hyperparameters.setdefault('input_shape', (X_train.shape[1], X_train.shape[2]))
 
         self.select_model()
-        self.train(X_train, y_train)
-        self.evaluate(X_test, y_test)
-        self.cross_validate_model(X, y)
+        if self.model_type == 'ppo':
+            self.train(None, None)
+            self.evaluate(None, None)
+        else:
+            self.train(X_train, y_train)
+            self.evaluate(X_test, y_test)
+            if self.model_type not in ['lstm']:
+                self.cross_validate_model(X, y)
 
         return self.metrics
 

@@ -10,7 +10,7 @@ This repository showcases a lightweight machine‑learning playground built with
 
 - **Interactive GUI** – load CSV/Excel data and kick off training from the desktop.
 - **ModelTrainer class** – wraps preprocessing, model selection and evaluation.
-- **Supported models** – linear regression, random forest, SVM and a small LSTM example.
+- **Supported models** – linear regression, random forest, SVM, PPO reinforcement learning and a small LSTM example.
 - **Background training** – UI stays responsive using a separate thread.
 - **Metrics & saving** – view evaluation results and optionally persist the trained model.
 
@@ -46,10 +46,11 @@ Launch the GUI:
 python src/main.py
 ```
 
-Run the standalone LSTM script:
+Run the standalone training script using `ModelTrainer`:
 
 ```bash
-python LSTM_Model_Trainer
+python LSTM_Model_Trainer --dataset data/my.csv --target close --model linear_regression
+python LSTM_Model_Trainer --dataset data/my.csv --target close --model ppo --env CartPole-v1 --timesteps 5000
 ```
 
 Both require the dependencies above. A sample `config.ini` shows expected dataset paths.
