@@ -20,3 +20,6 @@ This roadmap outlines upcoming milestones for the LSTM Model Trainer.
 - Additional visualization tools (e.g., confusion matrices, loss curves).
 - Continuous integration setup for automated testing.
 
+## Status
+Roadmap milestones have been validated and align with current features for the **v0.2 beta** release.
+

@@ -2,6 +2,7 @@
 import importlib
 import sys
 import types
+import pytest
 from pathlib import Path
 
 SRC_PATH = Path(__file__).resolve().parents[1] / "src"
@@ -144,12 +145,61 @@ def test_run_linear_regression(tmp_path):
         {'feat': i, 'target': i * 2} for i in range(10)
     ])
     setup_dummy_modules(dataset)
+    dummy_csv = tmp_path / 'dummy.csv'
+    dummy_csv.write_text('data')
     module = importlib.import_module('model_trainer')
     importlib.reload(module)
-    trainer = module.ModelTrainer('dummy.csv', 'target', 'linear_regression', {})
+    trainer = module.ModelTrainer(str(dummy_csv), 'target', 'linear_regression', {})
     metrics = trainer.run()
     assert 'Mean Squared Error' in metrics
     assert 'R² Score' in metrics
     assert 'Cross-Validation R² Mean' in metrics
+
+
+def test_missing_target_column():
+    dataset = DummyDataFrame([
+        {'feat': i} for i in range(5)
+    ])
+    setup_dummy_modules(dataset)
+    from pathlib import Path
+    dummy_csv = Path('dummy.csv')
+    dummy_csv.write_text('data')
+    module = importlib.import_module('model_trainer')
+    importlib.reload(module)
+    trainer = module.ModelTrainer(str(dummy_csv), 'target', 'linear_regression', {})
+    with pytest.raises(ValueError):
+        trainer.run()
+    dummy_csv.unlink()
+
+
+def test_save_and_load_model(tmp_path):
+    dataset = DummyDataFrame([
+        {'feat': i, 'target': i} for i in range(5)
+    ])
+    setup_dummy_modules(dataset)
+    dummy_csv = tmp_path / 'dummy.csv'
+    dummy_csv.write_text('data')
+    module = importlib.import_module('model_trainer')
+    importlib.reload(module)
+    trainer = module.ModelTrainer(str(dummy_csv), 'target', 'linear_regression', {})
+    trainer.run()
+    model_path = tmp_path / 'model.joblib'
+    trainer.save_model(str(model_path))
+    assert model_path.exists()
+    new_trainer = module.ModelTrainer('dummy.csv', 'target', 'linear_regression', {})
+    new_trainer.load_model(str(model_path))
+    assert new_trainer.model is not None
+
+
+def test_invalid_model_type():
+    dataset = DummyDataFrame([
+        {'feat': i, 'target': i} for i in range(5)
+    ])
+    setup_dummy_modules(dataset)
+    module = importlib.import_module('model_trainer')
+    importlib.reload(module)
+    trainer = module.ModelTrainer('dummy.csv', 'target', 'unknown', {})
+    with pytest.raises(ValueError):
+        trainer.select_model()
 
 

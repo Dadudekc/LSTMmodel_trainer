@@ -202,6 +202,9 @@ class MainWindow(QMainWindow):
         if not self.dataset_path:
             QMessageBox.warning(self, "Warning", "Please load a dataset first.")
             return
+        if not os.path.exists(self.dataset_path):
+            QMessageBox.critical(self, "Error", "Dataset file not found.")
+            return
 
         target_column = self.target_input.text().strip()
         if not target_column:
@@ -210,6 +213,10 @@ class MainWindow(QMainWindow):
 
         model_name = self.model_combo.currentText()
         model_type = self.map_model_name_to_type(model_name)
+
+        if self.df is not None and target_column not in self.df.columns:
+            QMessageBox.critical(self, "Error", "Target column not found in dataset.")
+            return
 
         # Gather hyperparameters
         hyperparameters = {}

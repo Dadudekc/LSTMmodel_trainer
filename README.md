@@ -32,11 +32,15 @@ LSTMmodel_trainer/
 
 ## Setup
 
-Install the required packages (PyQt5, pandas, scikit‑learn, tensorflow, joblib). Example:
-
-```bash
-pip install PyQt5 pandas scikit-learn tensorflow joblib
-```
+1. Create a virtual environment (optional but recommended):
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows use `.venv\Scripts\activate`
+   ```
+2. Install the required packages:
+   ```bash
+   pip install PyQt5 pandas scikit-learn tensorflow joblib
+   ```
 
 ## Usage
 
