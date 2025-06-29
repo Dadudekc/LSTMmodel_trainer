@@ -31,3 +31,6 @@ This project delivers a lightweight desktop application for experimenting with m
 - Tests run successfully using `pytest -q` with stubbed dependencies.
 - Documentation covers setup, usage and testing procedures.
 
+## Status
+This PRD has been reviewed and finalized for the upcoming **v0.2 beta** release.
+

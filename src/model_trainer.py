@@ -47,6 +47,8 @@ class ModelTrainer:
         self.env = None  # Used for PPO models
 
     def load_data(self):
+        if not os.path.exists(self.dataset_path):
+            raise FileNotFoundError(f"Dataset not found: {self.dataset_path}")
         data = pd.read_csv(self.dataset_path)
         if self.target_column not in data.columns:
             raise ValueError(f"Target column '{self.target_column}' not found in dataset.")
@@ -154,6 +156,8 @@ class ModelTrainer:
             joblib.dump(self.model, save_path)
 
     def load_model(self, model_path):
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model file not found: {model_path}")
         if self.model_type == 'ppo':
             try:
                 from stable_baselines3 import PPO
