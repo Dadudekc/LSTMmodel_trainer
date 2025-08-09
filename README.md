@@ -17,7 +17,7 @@ This repository showcases a lightweight machine‑learning playground built with
 ## Architecture Overview
 
 ```
-LSTMmodel_trainer/
+lstm-model-trainer/
 ├── src/
 │   ├── main.py            # PyQt interface and TrainingThread
 │   ├── model_trainer.py   # Core training utilities
