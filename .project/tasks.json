@@ -1,0 +1,75 @@
+{
+  "owner": "dadudekc",
+  "repo": "LSTMmodel_trainer",
+  "repo_path": "D:\\repositories\\dadudekc\\LSTMmodel_trainer",
+  "primary_file": "D:\\repositories\\dadudekc\\LSTMmodel_trainer\\README.md",
+  "tasks": [
+    {
+      "text": "Review and finalize the Product Requirements Document (PRD).",
+      "done": true,
+      "section": "Beta-Ready Checklist",
+      "file": "D:\\repositories\\dadudekc\\LSTMmodel_trainer\\Beta_Ready_Checklist.md",
+      "line": 5,
+      "indent": 0
+    },
+    {
+      "text": "Validate the Roadmap milestones align with current features.",
+      "done": true,
+      "section": "Beta-Ready Checklist",
+      "file": "D:\\repositories\\dadudekc\\LSTMmodel_trainer\\Beta_Ready_Checklist.md",
+      "line": 6,
+      "indent": 0
+    },
+    {
+      "text": "Smoke-test the GUI on Windows, macOS and Linux.",
+      "done": false,
+      "section": "Beta-Ready Checklist",
+      "file": "D:\\repositories\\dadudekc\\LSTMmodel_trainer\\Beta_Ready_Checklist.md",
+      "line": 7,
+      "indent": 0
+    },
+    {
+      "text": "Ensure `ModelTrainer` handles missing target columns gracefully.",
+      "done": true,
+      "section": "Beta-Ready Checklist",
+      "file": "D:\\repositories\\dadudekc\\LSTMmodel_trainer\\Beta_Ready_Checklist.md",
+      "line": 8,
+      "indent": 0
+    },
+    {
+      "text": "Verify model saving/loading works through the GUI and CLI.",
+      "done": true,
+      "section": "Beta-Ready Checklist",
+      "file": "D:\\repositories\\dadudekc\\LSTMmodel_trainer\\Beta_Ready_Checklist.md",
+      "line": 9,
+      "indent": 0
+    },
+    {
+      "text": "Document setup instructions for required dependencies.",
+      "done": true,
+      "section": "Beta-Ready Checklist",
+      "file": "D:\\repositories\\dadudekc\\LSTMmodel_trainer\\Beta_Ready_Checklist.md",
+      "line": 10,
+      "indent": 0
+    },
+    {
+      "text": "Run `pytest -q` and confirm all tests pass.",
+      "done": true,
+      "section": "Beta-Ready Checklist",
+      "file": "D:\\repositories\\dadudekc\\LSTMmodel_trainer\\Beta_Ready_Checklist.md",
+      "line": 11,
+      "indent": 0
+    },
+    {
+      "text": "Tag a `v0.2-beta` release and update CHANGELOG (if present).",
+      "done": false,
+      "section": "Beta-Ready Checklist",
+      "file": "D:\\repositories\\dadudekc\\LSTMmodel_trainer\\Beta_Ready_Checklist.md",
+      "line": 12,
+      "indent": 0
+    }
+  ],
+  "milestones": [],
+  "objectives": [],
+  "updated_at": "2025-08-09T21:23:15.658228Z"
+}
